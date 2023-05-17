@@ -467,30 +467,45 @@ public class SPIConnection implements Connection
 		int len = sql.length();
 		char inQuote = 0;
 		int paramIndex = 1;
+		boolean inSingleQuoteEncoded=false;
 		for(int idx = 0; idx < len; ++idx)
 		{
 			char c = sql.charAt(idx);
 			switch(c)
 			{
 			case '\\':
+				buf.append(c);
+				// inside encoded string ? 
+				if (!inSingleQuoteEncoded)
+					continue;
 				// Next character is escaped. Keep both
 				// escape and the character.
 				//
-				buf.append(c);
 				if(++idx == len)
 					break;
 				c = sql.charAt(idx);
 				break;
-
-			case '\'':
+				
 			case '"':
+				// Strings within quotes should not be subject
+				// to "?" -> "$n" substitution.
+				//
+				if(inQuote == c)
+					inQuote = 0;
+				else if(inQuote == 0) 
+					inQuote = c;
+				break;
+				case '\'':
 				// Strings within quotes should not be subject
 				// to '?' -> '$n' substitution.
 				//
 				if(inQuote == c)
 					inQuote = 0;
-				else if(inQuote == 0)
+				else if(inQuote == 0) {
 					inQuote = c;
+					char p = idx == 0 ? 0 : sql.charAt(idx-1);
+					inSingleQuoteEncoded=(p == 'e' || p == 'E'); // inside quoted text 
+				}
 				break;
 			
 			case '?':
