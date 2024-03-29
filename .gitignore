@@ -7,3 +7,4 @@ target/staging
 target/javadoc-bundle-options
 pljava-so/pgsql.properties
 pljava-so/target/
+target
